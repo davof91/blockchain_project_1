@@ -17,6 +17,13 @@ class BlockchainController {
         this.submitStar();
         this.getBlockByHash();
         this.getStarsByOwner();
+
+        // Adding extra endpoints for testing pursposes
+        this.getBlockByHash2();
+        this.validateChain();
+        this.addRandomBlock();
+        this.changePreviousHash();
+        this.changeHash();
     }
 
     // Enpoint to Get a Block by Height (GET Endpoint)
@@ -80,7 +87,7 @@ class BlockchainController {
 
     // This endpoint allows you to retrieve the block by hash (GET endpoint)
     getBlockByHash() {
-        this.app.get("/blockHash/:hash", async (req, res) => {
+        this.app.get("/block/:hash", async (req, res) => {
             if(req.params.hash) {
                 const hash = req.params.hash;
                 let block = await this.blockchain.getBlockByHash(hash);
@@ -118,6 +125,78 @@ class BlockchainController {
         });
     }
 
+    // EXTRA ENDPOINTS FOR TESTING
+    // This endpoint allows you to retrieve the block by hash (GET endpoint)
+    getBlockByHash2() {
+        this.app.get("/blockHash/:hash", async (req, res) => {
+            if(req.params.hash) {
+                const hash = req.params.hash;
+                let block = await this.blockchain.getBlockByHash(hash);
+                if(block){
+                    return res.status(200).json(block);
+                } else {
+                    return res.status(404).send("Block Not Found!");
+                }
+            } else {
+                return res.status(404).send("Block Not Found! Review the Parameters!");
+            }
+            
+        });
+    }
+
+    validateChain() {
+        this.app.get("/validateChain/", async (req, res) => {
+            let errors = await this.blockchain.validateChain();
+            if(errors){
+                return res.status(200).json(errors);
+            } else {
+                return res.status(404).json(errors);
+            }
+        });
+    }
+
+    addRandomBlock() {
+        this.app.get("/randomBlock/", async (req, res) => {
+            let block = await this.blockchain.addRandomBlock();
+            if(block){
+                return res.status(200).json(block);
+            } else {
+                return res.status(404).json(block);
+            }
+        });
+    }
+
+    changePreviousHash() {
+        this.app.get("/changePreviousHash/:height", async (req, res) => {
+            if(req.params.height) {
+                const height = req.params.height;
+                let chain = await this.blockchain.changePreviousHash(height);
+                if(chain){
+                    return res.status(200).json(chain);
+                } else {
+                    return res.status(404).send("Block Not Found!");
+                }
+            } else {
+                return res.status(404).send("Block Not Found! Review the Parameters!");
+            }
+        });
+    }
+
+    changeHash() {
+        this.app.get("/changeHash/:height", async (req, res) => {
+            if(req.params.height) {
+                const height = req.params.height;
+                let chain = await this.blockchain.changeHash(height);
+                if(chain){
+                    return res.status(200).json(chain);
+                } else {
+                    return res.status(404).send("Block Not Found!");
+                }
+            } else {
+                return res.status(404).send("Block Not Found! Review the Parameters!");
+            }
+        });
+    }
 }
 
 module.exports = (app, blockchainObj) => { return new BlockchainController(app, blockchainObj);}

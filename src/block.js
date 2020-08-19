@@ -46,7 +46,6 @@ class Block {
 
             // Calculating hash
             let calculated_hash = SHA256(JSON.stringify(self)).toString();
-
             // Setting the hash back.
             self.hash = temp_hash;
 
@@ -82,7 +81,7 @@ class Block {
           // Checking height to make sure we are not in the genesis block
           if(self.height != 0){
             // Converting from hex to ascii
-            ascii_object = hex2ascii(self.body);
+            let ascii_object = hex2ascii(self.body);
 
             // Returning the parsed ascii object
             return resolve(JSON.parse(ascii_object))

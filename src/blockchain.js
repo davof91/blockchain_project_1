@@ -80,7 +80,7 @@ class Blockchain {
             }
 
             // Adding the hash of the block to the block
-            block.hash = SHA256(JSON.stringify(self)).toString();
+            block.hash = SHA256(JSON.stringify(block)).toString();
 
             // Updating new height
             self.height = block.height;
@@ -152,6 +152,12 @@ class Blockchain {
 
             await self._addBlock(block)
 
+            let validate = await self.validateChain();
+
+            if(validate.length == 0){
+              
+            }
+
             resolve(block);
           }
           else{
@@ -183,6 +189,7 @@ class Blockchain {
         let self = this;
         return new Promise((resolve, reject) => {
             let block = self.chain.filter(p => p.height === height)[0];
+            console.log(block)
             if(block){
                 resolve(block);
             } else {
@@ -198,22 +205,27 @@ class Blockchain {
      * @param {*} address
      */
     getStarsByWalletAddress (address) {
-        let self = this;
-        let stars = [];
-        return new Promise((resolve, reject) => {
-          let temp = []
-          self.chain.array.forEach((item, i) => {
+      let self = this;
+      let stars = [];
+      
+      return new Promise((resolve, reject) => {
+        let temp = []
+        self.chain.forEach((item, i) => {
+          if(i != 0){
             temp.push(item.getBData());
-          });
-
-          Promise.all(temp).then((data) => {
-            if(data.owner == address){
-              stars.push(data);
-            }
-
-            resolve(stars);
-          })
+          }
         });
+
+        Promise.all(temp).then((data) => {
+          data.forEach((item, i)=> {
+            if(item.owner == address){
+              stars.push(item);
+            }
+          })
+          
+          resolve(stars);
+        })
+      });
     }
 
     /**
@@ -228,17 +240,18 @@ class Blockchain {
         return new Promise(async (resolve, reject) => {
           let promises = []
           self.chain.forEach((item, i) => {
-            promises.push(item.validate());
-
+            if(i!=0){
+              promises.push(item.validate());
+            }
           });
 
           Promise.all(promises).then((data)=>{
             data.forEach((item, i) => {
-              if(item){
-                errorLog.push("Different Hash");
+              if(!item){
+                errorLog.push("Different Hash on block height "+(i+1));
               }
-              else if(self.chain[i].height != 0 & self.chain[i].previousBlockHash != self.chain[i-1].hash){
-                errorLog.push("previousBlockHash not matching");
+              if(self.chain[i+1].height != 0 && self.chain[i+1].previousBlockHash != self.chain[i].hash){
+                errorLog.push("previousBlockHash not matching on block height "+(i+1));
               }
             });
 
@@ -248,6 +261,66 @@ class Blockchain {
         });
     }
 
+    /**
+     * EXTRA TESTING FUCNTIONS!!!!!!!!!
+     */
+
+     /**
+     * Adding a random block to not have to go through all the checks. Creates a user with  name of 
+     * `test[0-2]`
+     */
+    addRandomBlock(){
+      let self = this;
+      return new Promise(async (resolve, reject) => {
+        let block = new BlockClass.Block({owner:"test"+this.height%3, star:Math.random()});
+        block = await self._addBlock(block);
+
+        resolve(block);
+      });
+
+    }
+
+    changePreviousHash(height){
+      let self = this;
+      return new Promise((resolve, reject) => {
+        if(height != 0){
+          let block = self.chain[height];
+          if(block){
+            block.previousBlockHash = SHA256(JSON.stringify(block)).toString();
+            self.chain[height] = block
+            
+            resolve(self.chain);
+          } else {
+            resolve(null);
+          }
+        }
+        else{
+          resolve("Not a block")
+        }
+        
+      });
+    }
+
+    changeHash(height){
+      let self = this;
+      return new Promise((resolve, reject) => {
+        if(height != 0){
+          let block = self.chain[height];
+          if(block){
+            block.hash = SHA256(JSON.stringify(block)).toString();
+            self.chain[height] = block
+            
+            resolve(self.chain);
+          } else {
+            resolve(null);
+          }
+        }
+        else{
+          resolve("Not a block")
+        }
+        
+      });
+    }
 }
 
 module.exports.Blockchain = Blockchain;
